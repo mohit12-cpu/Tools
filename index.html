@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Tools Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- Include QR Code library -->
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <!-- Include jsQR library for QR code reading -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
     <!-- Header -->
@@ -12,7 +18,9 @@
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Image Tools Suite</h1>
         <nav class="flex flex-wrap justify-center gap-2">
             <button id="bg-remover-tab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Background Remover</button>
-            <button id="sketch-tab" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Sketch Converter</button>
+            <button id="sketch-tab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Sketch Converter</button>
+            <button id="ocr-tab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Image to Text (OCR)</button>
+            <button id="qr-tab" class="px-4 py-2 bg-blue-500 text-white rounded-lg">QR Code Tool</button>
         </nav>
     </header>
 
@@ -95,7 +103,7 @@
         </div>
 
         <!-- Sketch Converter Section -->
-        <div id="sketch-section">
+        <div id="sketch-section" class="hidden">
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Image to Sketch / Grayscale Converter</h2>
             <p class="text-gray-600 text-center mb-8">Converts any photo into a pencil sketch or black-and-white version</p>
             
@@ -115,31 +123,25 @@
                 </div> 
             </div>
 
-            <!-- Conversion Options -->
-            <div id="conversion-options" class="hidden mb-6">
-                <h3 class="text-xl font-semibold text-gray-800 mb-3">Select Conversion Type</h3>
+            <!-- Sketch Options -->
+            <div id="sketch-options" class="hidden mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Conversion Options</h3>
                 <div class="flex flex-wrap gap-4">
-                    <button class="conversion-btn bg-blue-500 text-white font-semibold py-2 px-4 rounded inline-flex items-center" data-type="sketch">
-                        <span>Sketch</span>
+                    <button id="grayscale-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                        Grayscale
                     </button>
-                    <button class="conversion-btn bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded inline-flex items-center" data-type="grayscale">
-                        <span>Grayscale</span>
+                    <button id="sketch-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded">
+                        Sketch Effect
                     </button>
                 </div>
             </div>
 
-            <!-- Sketch Loading Indicator -->
-            <div id="sketch-loading" class="hidden flex flex-col items-center justify-center my-8">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-                <p class="text-gray-600">Converting image...</p>
-            </div>
-
-            <!-- Sketch Image Display Area -->
+            <!-- Image Display Area -->
             <div id="sketch-image-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div class="flex flex-col">
                     <h3 class="text-xl font-semibold text-gray-800 mb-2">Original Image</h3>
                     <div class="border rounded-lg overflow-hidden">
-                        <canvas id="sketch-original-canvas" class="w-full h-auto max-h-96 object-contain"></canvas>
+                        <img id="sketch-original-image" class="w-full h-auto max-h-96 object-contain" alt="Original image">
                     </div>
                 </div>
                 <div class="flex flex-col">
@@ -150,17 +152,161 @@
                 </div>
             </div>
 
-            <!-- Sketch Download Button -->
+            <!-- Download Button -->
             <div id="sketch-download-section" class="hidden text-center">
                 <button id="sketch-download-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
                     Download Result
                 </button>
             </div>
 
-            <!-- Sketch Error Message -->
+            <!-- Error Message -->
             <div id="sketch-error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
                 <strong class="font-bold">Error! </strong>
                 <span id="sketch-error-text" class="block sm:inline">Something went wrong.</span>
+            </div>
+        </div>
+
+        <!-- OCR Section -->
+        <div id="ocr-section" class="hidden">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Image to Text (OCR)</h2>
+            <p class="text-gray-600 text-center mb-8">Extract text from images using Tesseract.js</p>
+            
+            <!-- File Upload Area -->
+            <div class="mb-8">
+                <div class="flex items-center justify-center w-full">
+                    <label for="ocr-dropzone-file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                            <p class="text-xs text-gray-500">PNG, JPG, JPEG, PDF (MAX. 10MB)</p>
+                        </div>
+                        <input id="ocr-dropzone-file" type="file" class="hidden" accept="image/*" />
+                    </label>
+                </div> 
+            </div>
+
+            <!-- OCR Loading Indicator -->
+            <div id="ocr-loading" class="hidden flex flex-col items-center justify-center my-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                <p class="text-gray-600">Processing image for text extraction...</p>
+                <p id="ocr-progress" class="text-gray-500 mt-2"></p>
+            </div>
+
+            <!-- OCR Image Display Area -->
+            <div id="ocr-image-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Original Image</h3>
+                    <div class="border rounded-lg overflow-hidden">
+                        <img id="ocr-original-image" class="w-full h-auto max-h-96 object-contain" alt="Original image">
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Extracted Text</h3>
+                    <div class="border rounded-lg overflow-hidden">
+                        <textarea id="ocr-result-text" class="w-full h-96 p-4 text-gray-700 resize-none" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OCR Download Button -->
+            <div id="ocr-download-section" class="hidden text-center">
+                <button id="ocr-download-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+                    Download Text
+                </button>
+            </div>
+
+            <!-- OCR Error Message -->
+            <div id="ocr-error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">Error! </strong>
+                <span id="ocr-error-text" class="block sm:inline">Something went wrong.</span>
+            </div>
+        </div>
+
+        <!-- QR Code Tool Section -->
+        <div id="qr-section">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">QR Code Generator & Reader</h2>
+            <p class="text-gray-600 text-center mb-8">Generate or decode QR codes</p>
+            
+            <!-- QR Tool Tabs -->
+            <div class="flex mb-6">
+                <button id="qr-generator-tab" class="px-4 py-2 bg-blue-500 text-white rounded-l-lg">Generate QR</button>
+                <button id="qr-reader-tab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-r-lg">Read QR</button>
+            </div>
+            
+            <!-- QR Generator Section -->
+            <div id="qr-generator-section">
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="qr-content">
+                        Enter text or URL to generate QR code
+                    </label>
+                    <textarea id="qr-content" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="3" placeholder="https://example.com or any text">https://example.com</textarea>
+                </div>
+                
+                <div class="flex justify-center mb-6">
+                    <button id="generate-qr-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
+                        Generate QR Code
+                    </button>
+                </div>
+                
+                <!-- QR Code Display -->
+                <div id="qr-code-container" class="flex justify-center mb-6 hidden">
+                    <div id="qrcode" class="p-4 bg-white rounded-lg"></div>
+                </div>
+                
+                <!-- Download QR Button -->
+                <div id="download-qr-section" class="hidden text-center">
+                    <button id="download-qr-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+                        Download QR Code
+                    </button>
+                </div>
+            </div>
+            
+            <!-- QR Reader Section -->
+            <div id="qr-reader-section" class="hidden">
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-3">QR Code Scanner</h3>
+                    <p class="text-gray-600 mb-4">Camera will start automatically. Point it at a QR code to scan.</p>
+                </div>
+                
+                <!-- Camera Preview -->
+                <div id="camera-container" class="hidden mb-6">
+                    <div class="flex justify-center">
+                        <video id="qr-video" class="w-full max-w-md h-auto rounded-lg border"></video>
+                    </div>
+                    <div class="text-center mt-2">
+                        <button id="stop-camera-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out">
+                            Stop Camera
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Canvas for QR processing -->
+                <canvas id="qr-canvas" class="hidden"></canvas>
+                
+                <!-- QR Result -->
+                <div id="qr-result" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong class="font-bold">Decoded Content: </strong>
+                    <span id="qr-result-text" class="block sm:inline"></span>
+                </div>
+                
+                <!-- File Upload Alternative -->
+                <div class="mt-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-3">Or Upload QR Code Image</h3>
+                    <div class="flex items-center justify-center w-full">
+                        <label for="qr-image-file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                                </svg>
+                                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload QR image</span> or drag and drop</p>
+                                <p class="text-xs text-gray-500">PNG, JPG, JPEG</p>
+                            </div>
+                            <input id="qr-image-file" type="file" class="hidden" accept="image/*" />
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -181,30 +327,73 @@
 
         // DOM Elements for Sketch Converter
         const sketchTab = document.getElementById('sketch-tab');
-        const bgRemoverTab = document.getElementById('bg-remover-tab');
         const sketchSection = document.getElementById('sketch-section');
-        const bgRemoverSection = document.getElementById('bg-remover-section');
         const sketchFileInput = document.getElementById('sketch-dropzone-file');
-        const sketchOriginalCanvas = document.getElementById('sketch-original-canvas');
-        const sketchResultCanvas = document.getElementById('sketch-result-canvas');
-        const sketchCtxOriginal = sketchOriginalCanvas.getContext('2d');
-        const sketchCtxResult = sketchResultCanvas.getContext('2d');
+        const sketchOriginalImage = document.getElementById('sketch-original-image');
         const sketchImageContainer = document.getElementById('sketch-image-container');
-        const sketchLoadingIndicator = document.getElementById('sketch-loading');
+        const sketchResultCanvas = document.getElementById('sketch-result-canvas');
+        const sketchCtx = sketchResultCanvas.getContext('2d');
+        const sketchOptions = document.getElementById('sketch-options');
+        const grayscaleBtn = document.getElementById('grayscale-btn');
+        const sketchBtn = document.getElementById('sketch-btn');
         const sketchDownloadSection = document.getElementById('sketch-download-section');
         const sketchDownloadBtn = document.getElementById('sketch-download-btn');
         const sketchErrorMessage = document.getElementById('sketch-error-message');
         const sketchErrorText = document.getElementById('sketch-error-text');
-        const conversionOptions = document.getElementById('conversion-options');
-        const conversionButtons = document.querySelectorAll('.conversion-btn');
 
+        // DOM Elements for OCR
+        const ocrTab = document.getElementById('ocr-tab');
+        const ocrSection = document.getElementById('ocr-section');
+        const ocrFileInput = document.getElementById('ocr-dropzone-file');
+        const ocrOriginalImage = document.getElementById('ocr-original-image');
+        const ocrImageContainer = document.getElementById('ocr-image-container');
+        const ocrLoadingIndicator = document.getElementById('ocr-loading');
+        const ocrProgress = document.getElementById('ocr-progress');
+        const ocrResultText = document.getElementById('ocr-result-text');
+        const ocrDownloadSection = document.getElementById('ocr-download-section');
+        const ocrDownloadBtn = document.getElementById('ocr-download-btn');
+        const ocrErrorMessage = document.getElementById('ocr-error-message');
+        const ocrErrorText = document.getElementById('ocr-error-text');
+
+        // DOM Elements for QR Code Tool
+        const qrTab = document.getElementById('qr-tab');
+        const bgRemoverTab = document.getElementById('bg-remover-tab');
+        const qrSection = document.getElementById('qr-section');
+        const bgRemoverSection = document.getElementById('bg-remover-section');
+        
+        // QR Generator Elements
+        const qrGeneratorTab = document.getElementById('qr-generator-tab');
+        const qrReaderTab = document.getElementById('qr-reader-tab');
+        const qrGeneratorSection = document.getElementById('qr-generator-section');
+        const qrReaderSection = document.getElementById('qr-reader-section');
+        const qrContent = document.getElementById('qr-content');
+        const generateQrBtn = document.getElementById('generate-qr-btn');
+        const qrCodeContainer = document.getElementById('qr-code-container');
+        const qrcodeDiv = document.getElementById('qrcode');
+        const downloadQrSection = document.getElementById('download-qr-section');
+        const downloadQrBtn = document.getElementById('download-qr-btn');
+        
+        // QR Reader Elements
+        const qrImageFile = document.getElementById('qr-image-file');
+        const stopCameraBtn = document.getElementById('stop-camera-btn');
+        const cameraContainer = document.getElementById('camera-container');
+        const qrVideo = document.getElementById('qr-video');
+        const qrCanvas = document.getElementById('qr-canvas');
+        const qrCtx = qrCanvas.getContext('2d');
+        const qrResult = document.getElementById('qr-result');
+        const qrResultText = document.getElementById('qr-result-text');
+        
         // API Key (replace with your actual API key)
         const API_KEY = 'C6yBigRn4bhfYQ6mYvQuE9JW';
         
-        // Selected format and conversion type
+        // Selected format
         let selectedFormat = 'auto';
-        let selectedConversionType = 'sketch';
-        let currentSketchImage = null;
+        
+        // QR Code instance
+        let qrCodeInstance = null;
+        
+        // Camera stream
+        let stream = null;
 
         // Tab Navigation Event Listeners
         bgRemoverTab.addEventListener('click', () => {
@@ -212,9 +401,15 @@
             bgRemoverTab.classList.add('bg-blue-500', 'text-white');
             sketchTab.classList.remove('bg-blue-500', 'text-white');
             sketchTab.classList.add('bg-gray-200', 'text-gray-700');
+            ocrTab.classList.remove('bg-blue-500', 'text-white');
+            ocrTab.classList.add('bg-gray-200', 'text-gray-700');
+            qrTab.classList.remove('bg-blue-500', 'text-white');
+            qrTab.classList.add('bg-gray-200', 'text-gray-700');
             
             bgRemoverSection.classList.remove('hidden');
             sketchSection.classList.add('hidden');
+            ocrSection.classList.add('hidden');
+            qrSection.classList.add('hidden');
         });
 
         sketchTab.addEventListener('click', () => {
@@ -222,9 +417,74 @@
             sketchTab.classList.add('bg-blue-500', 'text-white');
             bgRemoverTab.classList.remove('bg-blue-500', 'text-white');
             bgRemoverTab.classList.add('bg-gray-200', 'text-gray-700');
+            ocrTab.classList.remove('bg-blue-500', 'text-white');
+            ocrTab.classList.add('bg-gray-200', 'text-gray-700');
+            qrTab.classList.remove('bg-blue-500', 'text-white');
+            qrTab.classList.add('bg-gray-200', 'text-gray-700');
             
             sketchSection.classList.remove('hidden');
             bgRemoverSection.classList.add('hidden');
+            ocrSection.classList.add('hidden');
+            qrSection.classList.add('hidden');
+        });
+
+        ocrTab.addEventListener('click', () => {
+            ocrTab.classList.remove('bg-gray-200', 'text-gray-700');
+            ocrTab.classList.add('bg-blue-500', 'text-white');
+            bgRemoverTab.classList.remove('bg-blue-500', 'text-white');
+            bgRemoverTab.classList.add('bg-gray-200', 'text-gray-700');
+            sketchTab.classList.remove('bg-blue-500', 'text-white');
+            sketchTab.classList.add('bg-gray-200', 'text-gray-700');
+            qrTab.classList.remove('bg-blue-500', 'text-white');
+            qrTab.classList.add('bg-gray-200', 'text-gray-700');
+            
+            ocrSection.classList.remove('hidden');
+            bgRemoverSection.classList.add('hidden');
+            sketchSection.classList.add('hidden');
+            qrSection.classList.add('hidden');
+        });
+
+        qrTab.addEventListener('click', () => {
+            qrTab.classList.remove('bg-gray-200', 'text-gray-700');
+            qrTab.classList.add('bg-blue-500', 'text-white');
+            bgRemoverTab.classList.remove('bg-blue-500', 'text-white');
+            bgRemoverTab.classList.add('bg-gray-200', 'text-gray-700');
+            sketchTab.classList.remove('bg-blue-500', 'text-white');
+            sketchTab.classList.add('bg-gray-200', 'text-gray-700');
+            ocrTab.classList.remove('bg-blue-500', 'text-white');
+            ocrTab.classList.add('bg-gray-200', 'text-gray-700');
+            
+            qrSection.classList.remove('hidden');
+            bgRemoverSection.classList.add('hidden');
+            sketchSection.classList.add('hidden');
+            ocrSection.classList.add('hidden');
+        });
+
+        // QR Tool Tab Event Listeners
+        qrGeneratorTab.addEventListener('click', () => {
+            qrGeneratorTab.classList.remove('bg-gray-200', 'text-gray-700');
+            qrGeneratorTab.classList.add('bg-blue-500', 'text-white');
+            qrReaderTab.classList.remove('bg-blue-500', 'text-white');
+            qrReaderTab.classList.add('bg-gray-200', 'text-gray-700');
+            
+            qrGeneratorSection.classList.remove('hidden');
+            qrReaderSection.classList.add('hidden');
+            
+            // Stop camera if it's running
+            stopCamera();
+        });
+
+        qrReaderTab.addEventListener('click', () => {
+            qrReaderTab.classList.remove('bg-gray-200', 'text-gray-700');
+            qrReaderTab.classList.add('bg-blue-500', 'text-white');
+            qrGeneratorTab.classList.remove('bg-blue-500', 'text-white');
+            qrGeneratorTab.classList.add('bg-gray-200', 'text-gray-700');
+            
+            qrReaderSection.classList.remove('hidden');
+            qrGeneratorSection.classList.add('hidden');
+            
+            // Start camera automatically when switching to QR reader
+            startCamera();
         });
 
         // Event Listener for background remover file input
@@ -249,29 +509,35 @@
         // Event Listener for sketch converter file input
         sketchFileInput.addEventListener('change', handleSketchFileSelect);
 
-        // Event Listeners for conversion buttons
-        conversionButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Update button styles
-                conversionButtons.forEach(btn => {
-                    if (btn.dataset.type === 'sketch') {
-                        btn.classList.remove('bg-gray-200', 'text-gray-700');
-                        btn.classList.add('bg-blue-500', 'text-white');
-                    } else {
-                        btn.classList.remove('bg-blue-500', 'text-white');
-                        btn.classList.add('bg-gray-200', 'text-gray-700');
-                    }
-                });
-                
-                // Set selected conversion type
-                selectedConversionType = button.dataset.type;
-                
-                // Apply conversion if image is loaded
-                if (currentSketchImage) {
-                    applyConversion();
-                }
-            });
+        // Event Listeners for sketch options
+        grayscaleBtn.addEventListener('click', () => {
+            grayscaleBtn.classList.remove('bg-gray-200', 'text-gray-800');
+            grayscaleBtn.classList.add('bg-blue-500', 'text-white');
+            sketchBtn.classList.remove('bg-blue-500', 'text-white');
+            sketchBtn.classList.add('bg-gray-200', 'text-gray-800');
+            applyGrayscaleEffect();
         });
+
+        sketchBtn.addEventListener('click', () => {
+            sketchBtn.classList.remove('bg-gray-200', 'text-gray-800');
+            sketchBtn.classList.add('bg-blue-500', 'text-white');
+            grayscaleBtn.classList.remove('bg-blue-500', 'text-white');
+            grayscaleBtn.classList.add('bg-gray-200', 'text-gray-800');
+            applySketchEffect();
+        });
+
+        // Event Listener for OCR file input
+        ocrFileInput.addEventListener('change', handleOcrFileSelect);
+
+        // QR Code Generator Event Listener
+        generateQrBtn.addEventListener('click', generateQRCode);
+        
+        // QR Code Download Event Listener
+        downloadQrBtn.addEventListener('click', downloadQRCode);
+        
+        // QR Reader Event Listeners
+        qrImageFile.addEventListener('change', handleQrImageUpload);
+        stopCameraBtn.addEventListener('click', stopCamera);
 
         // Handle file selection for background remover
         function handleFileSelect(event) {
@@ -362,180 +628,378 @@
                 return;
             }
             
-            // Load image for sketch conversion
+            // Display original image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                sketchOriginalImage.src = e.target.result;
+                sketchImageContainer.classList.remove('hidden');
+                sketchOptions.classList.remove('hidden');
+                
+                // Set up canvas
+                sketchOriginalImage.onload = function() {
+                    sketchResultCanvas.width = sketchOriginalImage.naturalWidth;
+                    sketchResultCanvas.height = sketchOriginalImage.naturalHeight;
+                    sketchCtx.drawImage(sketchOriginalImage, 0, 0);
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Apply grayscale effect
+        function applyGrayscaleEffect() {
+            if (!sketchOriginalImage.src) return;
+            
+            sketchOriginalImage.onload = function() {
+                sketchResultCanvas.width = sketchOriginalImage.naturalWidth;
+                sketchResultCanvas.height = sketchOriginalImage.naturalHeight;
+                
+                // Draw original image
+                sketchCtx.drawImage(sketchOriginalImage, 0, 0);
+                
+                // Get image data
+                const imageData = sketchCtx.getImageData(0, 0, sketchResultCanvas.width, sketchResultCanvas.height);
+                const data = imageData.data;
+                
+                // Apply grayscale filter
+                for (let i = 0; i < data.length; i += 4) {
+                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    data[i] = avg;     // red
+                    data[i + 1] = avg; // green
+                    data[i + 2] = avg; // blue
+                }
+                
+                // Put image data back
+                sketchCtx.putImageData(imageData, 0, 0);
+                
+                // Show download button
+                sketchDownloadSection.classList.remove('hidden');
+                sketchDownloadBtn.onclick = downloadSketch;
+            };
+            
+            // Trigger onload if image is already loaded
+            if (sketchOriginalImage.complete) {
+                sketchOriginalImage.onload();
+            }
+        }
+
+        // Apply sketch effect using edge detection
+        function applySketchEffect() {
+            if (!sketchOriginalImage.src) return;
+            
+            sketchOriginalImage.onload = function() {
+                sketchResultCanvas.width = sketchOriginalImage.naturalWidth;
+                sketchResultCanvas.height = sketchOriginalImage.naturalHeight;
+                
+                // Draw original image
+                sketchCtx.drawImage(sketchOriginalImage, 0, 0);
+                
+                // Get image data
+                const imageData = sketchCtx.getImageData(0, 0, sketchResultCanvas.width, sketchResultCanvas.height);
+                const data = imageData.data;
+                
+                // Create a copy for the grayscale version
+                const grayscaleData = new Uint8ClampedArray(data);
+                for (let i = 0; i < grayscaleData.length; i += 4) {
+                    const avg = (grayscaleData[i] + grayscaleData[i + 1] + grayscaleData[i + 2]) / 3;
+                    grayscaleData[i] = avg;
+                    grayscaleData[i + 1] = avg;
+                    grayscaleData[i + 2] = avg;
+                }
+                
+                // Apply edge detection using Sobel operator
+                const width = sketchResultCanvas.width;
+                const height = sketchResultCanvas.height;
+                const output = new Uint8ClampedArray(data);
+                
+                // Sobel kernels
+                const kernelX = [
+                    [-1, 0, 1],
+                    [-2, 0, 2],
+                    [-1, 0, 1]
+                ];
+                
+                const kernelY = [
+                    [-1, -2, -1],
+                    [ 0,  0,  0],
+                    [ 1,  2,  1]
+                ];
+                
+                // Apply convolution
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let pixelX = 0;
+                        let pixelY = 0;
+                        
+                        // Apply kernels
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4;
+                                const gray = grayscaleData[idx];
+                                
+                                pixelX += gray * kernelX[ky + 1][kx + 1];
+                                pixelY += gray * kernelY[ky + 1][kx + 1];
+                            }
+                        }
+                        
+                        // Calculate gradient magnitude
+                        const magnitude = Math.sqrt(pixelX * pixelX + pixelY * pixelY);
+                        
+                        // Invert for sketch effect (darker edges on lighter background)
+                        const val = 255 - Math.min(255, magnitude * 0.5);
+                        
+                        // Set pixel in output
+                        const outIdx = (y * width + x) * 4;
+                        output[outIdx] = val;
+                        output[outIdx + 1] = val;
+                        output[outIdx + 2] = val;
+                        output[outIdx + 3] = 255;
+                    }
+                }
+                
+                // Put image data back
+                const outputImageData = new ImageData(output, width, height);
+                sketchCtx.putImageData(outputImageData, 0, 0);
+                
+                // Show download button
+                sketchDownloadSection.classList.remove('hidden');
+                sketchDownloadBtn.onclick = downloadSketch;
+            };
+            
+            // Trigger onload if image is already loaded
+            if (sketchOriginalImage.complete) {
+                sketchOriginalImage.onload();
+            }
+        }
+
+        // Handle file selection for OCR
+        function handleOcrFileSelect(event) {
+            const file = event.target.files[0];
+            
+            if (!file) return;
+            
+            // Check if file is an image
+            if (!file.type.match('image.*')) {
+                showOcrError('Please select an image file (PNG, JPG, JPEG)');
+                return;
+            }
+            
+            // Display original image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                ocrOriginalImage.src = e.target.result;
+                
+                // Show loading indicator
+                ocrLoadingIndicator.classList.remove('hidden');
+                ocrImageContainer.classList.add('hidden');
+                ocrDownloadSection.classList.add('hidden');
+                hideOcrError();
+                
+                // Process image with Tesseract.js
+                processOcrImage(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Process image with Tesseract.js for OCR
+        async function processOcrImage(imageSrc) {
+            try {
+                // Use Tesseract.js to extract text
+                const result = await Tesseract.recognize(
+                    imageSrc,
+                    'eng',
+                    {
+                        logger: (m) => {
+                            if (m.status === 'recognizing text') {
+                                ocrProgress.textContent = `Progress: ${Math.round(m.progress * 100)}%`;
+                            }
+                        }
+                    }
+                );
+                
+                // Display extracted text
+                ocrResultText.value = result.data.text;
+                
+                // Hide loading, show result
+                ocrLoadingIndicator.classList.add('hidden');
+                ocrImageContainer.classList.remove('hidden');
+                ocrDownloadSection.classList.remove('hidden');
+                
+                // Set up download button
+                ocrDownloadBtn.onclick = () => downloadOcrText(result.data.text);
+            } catch (error) {
+                console.error('OCR Error:', error);
+                ocrLoadingIndicator.classList.add('hidden');
+                showOcrError(`Failed to extract text: ${error.message}`);
+            }
+        }
+
+        // Generate QR Code
+        function generateQRCode() {
+            const content = qrContent.value.trim();
+            
+            if (!content) {
+                alert('Please enter text or URL to generate QR code');
+                return;
+            }
+            
+            // Clear previous QR code
+            qrcodeDiv.innerHTML = '';
+            
+            // Generate new QR code
+            qrCodeInstance = new QRCode(qrcodeDiv, {
+                text: content,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // Show QR code and download button
+            qrCodeContainer.classList.remove('hidden');
+            downloadQrSection.classList.remove('hidden');
+        }
+
+        // Download QR Code
+        function downloadQRCode() {
+            const qrCanvas = qrcodeDiv.querySelector('canvas');
+            if (!qrCanvas) {
+                alert('No QR code to download');
+                return;
+            }
+            
+            const dataUrl = qrCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'qrcode.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Handle QR image upload
+        function handleQrImageUpload(event) {
+            const file = event.target.files[0];
+            
+            if (!file) return;
+            
+            // Check if file is an image
+            if (!file.type.match('image.*')) {
+                return;
+            }
+            
+            // Load image for QR code reading
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    currentSketchImage = img;
-                    
                     // Set canvas dimensions
-                    sketchOriginalCanvas.width = img.width;
-                    sketchOriginalCanvas.height = img.height;
-                    sketchResultCanvas.width = img.width;
-                    sketchResultCanvas.height = img.height;
+                    qrCanvas.width = img.width;
+                    qrCanvas.height = img.height;
                     
-                    // Draw original image on canvas
-                    sketchCtxOriginal.drawImage(img, 0, 0);
+                    // Draw image on canvas
+                    qrCtx.drawImage(img, 0, 0, img.width, img.height);
                     
-                    // Show conversion options
-                    sketchImageContainer.classList.remove('hidden');
-                    conversionOptions.classList.remove('hidden');
+                    // Get image data and decode QR code
+                    const imageData = qrCtx.getImageData(0, 0, img.width, img.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
                     
-                    // Apply default conversion (sketch)
-                    applyConversion();
+                    if (code) {
+                        showQrResult(code.data);
+                    }
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        // Apply selected conversion to image
-        function applyConversion() {
-            if (!currentSketchImage) return;
-            
-            // Show loading indicator
-            sketchLoadingIndicator.classList.remove('hidden');
-            sketchDownloadSection.classList.add('hidden');
-            hideSketchError();
-            
-            // Use setTimeout to allow UI to update before processing
-            setTimeout(() => {
-                try {
-                    if (selectedConversionType === 'sketch') {
-                        // Apply sketch effect
-                        applySketchEffect();
-                    } else if (selectedConversionType === 'grayscale') {
-                        // Apply grayscale effect
-                        applyGrayscaleEffect();
-                    }
-                    
-                    // Hide loading, show download
-                    sketchLoadingIndicator.classList.add('hidden');
-                    sketchDownloadSection.classList.remove('hidden');
-                } catch (error) {
-                    console.error('Error:', error);
-                    sketchLoadingIndicator.classList.add('hidden');
-                    showSketchError(`Failed to convert image: ${error.message}`);
-                }
-            }, 100);
+        // Start camera for QR code scanning
+        async function startCamera() {
+            try {
+                // Request camera access
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                
+                qrVideo.srcObject = stream;
+                cameraContainer.classList.remove('hidden');
+                
+                // Start scanning
+                scanQRCode();
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                // Silently fail without showing error messages
+            }
         }
 
-        // Apply sketch effect using edge detection
-        function applySketchEffect() {
-            const width = sketchOriginalCanvas.width;
-            const height = sketchOriginalCanvas.height;
+        // Scan QR code from camera stream
+        function scanQRCode() {
+            if (!stream) return;
             
-            // Get original image data
-            const originalImageData = sketchCtxOriginal.getImageData(0, 0, width, height);
-            const data = originalImageData.data;
+            // Set canvas dimensions to video dimensions
+            qrCanvas.width = qrVideo.videoWidth || 640;
+            qrCanvas.height = qrVideo.videoHeight || 480;
             
-            // Create a copy for the result
-            const resultImageData = sketchCtxOriginal.createImageData(width, height);
-            const resultData = resultImageData.data;
+            // Draw video frame on canvas
+            qrCtx.drawImage(qrVideo, 0, 0, qrCanvas.width, qrCanvas.height);
             
-            // Convert to grayscale first
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                
-                // Standard grayscale conversion
-                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                
-                resultData[i] = gray;
-                resultData[i + 1] = gray;
-                resultData[i + 2] = gray;
-                resultData[i + 3] = data[i + 3]; // Alpha channel
+            // Get image data and decode QR code
+            const imageData = qrCtx.getImageData(0, 0, qrCanvas.width, qrCanvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code) {
+                showQrResult(code.data);
+                // Continue scanning for more QR codes
+                setTimeout(scanQRCode, 1000);
+                return;
             }
             
-            // Apply edge detection using Sobel operator
-            const sobelData = new Uint8ClampedArray(resultData);
-            
-            // Sobel kernels
-            const kernelX = [
-                [-1, 0, 1],
-                [-2, 0, 2],
-                [-1, 0, 1]
-            ];
-            
-            const kernelY = [
-                [-1, -2, -1],
-                [ 0,  0,  0],
-                [ 1,  2,  1]
-            ];
-            
-            // Apply convolution
-            for (let y = 1; y < height - 1; y++) {
-                for (let x = 1; x < width - 1; x++) {
-                    let pixelX = 0;
-                    let pixelY = 0;
-                    
-                    // Apply kernels
-                    for (let ky = -1; ky <= 1; ky++) {
-                        for (let kx = -1; kx <= 1; kx++) {
-                            const idx = ((y + ky) * width + (x + kx)) * 4;
-                            const gray = resultData[idx];
-                            
-                            pixelX += gray * kernelX[ky + 1][kx + 1];
-                            pixelY += gray * kernelY[ky + 1][kx + 1];
-                        }
-                    }
-                    
-                    // Calculate gradient magnitude
-                    const magnitude = Math.sqrt(pixelX * pixelX + pixelY * pixelY);
-                    
-                    // Invert for sketch effect (white lines on black)
-                    const val = 255 - Math.min(255, magnitude);
-                    
-                    const idx = (y * width + x) * 4;
-                    sobelData[idx] = val;
-                    sobelData[idx + 1] = val;
-                    sobelData[idx + 2] = val;
-                }
-            }
-            
-            // Put processed data on result canvas
-            const finalImageData = new ImageData(sobelData, width, height);
-            sketchCtxResult.putImageData(finalImageData, 0, 0);
-            
-            // Set up download button
-            sketchDownloadBtn.onclick = () => downloadSketchImage('sketch_result.png');
+            // Continue scanning
+            requestAnimationFrame(scanQRCode);
         }
 
-        // Apply grayscale effect
-        function applyGrayscaleEffect() {
-            const width = sketchOriginalCanvas.width;
-            const height = sketchOriginalCanvas.height;
-            
-            // Get original image data
-            const originalImageData = sketchCtxOriginal.getImageData(0, 0, width, height);
-            const data = originalImageData.data;
-            
-            // Create a copy for the result
-            const resultImageData = sketchCtxOriginal.createImageData(width, height);
-            const resultData = resultImageData.data;
-            
-            // Convert to grayscale
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                
-                // Standard grayscale conversion
-                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                
-                resultData[i] = gray;
-                resultData[i + 1] = gray;
-                resultData[i + 2] = gray;
-                resultData[i + 3] = data[i + 3]; // Alpha channel
+        // Stop camera
+        function stopCamera() {
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                stream = null;
             }
-            
-            // Put processed data on result canvas
-            sketchCtxResult.putImageData(resultImageData, 0, 0);
-            
-            // Set up download button
-            sketchDownloadBtn.onclick = () => downloadSketchImage('grayscale_result.png');
+            cameraContainer.classList.add('hidden');
+        }
+
+        // Show QR result
+        function showQrResult(data) {
+            qrResultText.textContent = data;
+            qrResult.classList.remove('hidden');
+        }
+
+        // Download sketch result
+        function downloadSketch() {
+            const dataUrl = sketchResultCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = 'sketch_result.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Download OCR text
+        function downloadOcrText(text) {
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'extracted_text.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         // Download image
@@ -548,17 +1012,6 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        }
-
-        // Download sketch image
-        function downloadSketchImage(filename) {
-            const dataUrl = sketchResultCanvas.toDataURL('image/png');
-            const a = document.createElement('a');
-            a.href = dataUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
         }
 
         // Show error message for background remover
@@ -583,9 +1036,22 @@
             sketchErrorMessage.classList.add('hidden');
         }
 
-        // Initialize with Sketch Converter as default
-        sketchSection.classList.remove('hidden');
+        // Show error message for OCR
+        function showOcrError(message) {
+            ocrErrorText.textContent = message;
+            ocrErrorMessage.classList.remove('hidden');
+        }
+
+        // Hide error message for OCR
+        function hideOcrError() {
+            ocrErrorMessage.classList.add('hidden');
+        }
+
+        // Initialize with QR Code Tool as default
+        qrSection.classList.remove('hidden');
         bgRemoverSection.classList.add('hidden');
+        sketchSection.classList.add('hidden');
+        ocrSection.classList.add('hidden');
     </script>
 </body>
 </html>
