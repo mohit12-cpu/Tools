@@ -10,16 +10,16 @@
     <!-- Header -->
     <header class="w-full max-w-4xl mb-6">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Image Tools Suite</h1>
-        <nav class="flex justify-center space-x-4">
-            <button id="bg-remover-tab" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Background Remover</button>
-            <button id="sketch-converter-tab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Sketch Converter</button>
+        <nav class="flex flex-wrap justify-center gap-2">
+            <button id="bg-remover-tab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Background Remover</button>
+            <button id="sketch-tab" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Sketch Converter</button>
         </nav>
     </header>
 
     <!-- Main Content Container -->
     <div class="max-w-4xl w-full bg-white rounded-lg shadow-xl p-6">
         <!-- Background Remover Section -->
-        <div id="bg-remover-section">
+        <div id="bg-remover-section" class="hidden">
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Background Remover</h2>
             <p class="text-gray-600 text-center mb-8">Upload an image to remove its background</p>
             
@@ -95,7 +95,7 @@
         </div>
 
         <!-- Sketch Converter Section -->
-        <div id="sketch-converter-section" class="hidden">
+        <div id="sketch-section">
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Image to Sketch / Grayscale Converter</h2>
             <p class="text-gray-600 text-center mb-8">Converts any photo into a pencil sketch or black-and-white version</p>
             
@@ -119,10 +119,10 @@
             <div id="conversion-options" class="hidden mb-6">
                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Select Conversion Type</h3>
                 <div class="flex flex-wrap gap-4">
-                    <button class="conversion-btn bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-type="sketch">
+                    <button class="conversion-btn bg-blue-500 text-white font-semibold py-2 px-4 rounded inline-flex items-center" data-type="sketch">
                         <span>Sketch</span>
                     </button>
-                    <button class="conversion-btn bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-type="grayscale">
+                    <button class="conversion-btn bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded inline-flex items-center" data-type="grayscale">
                         <span>Grayscale</span>
                     </button>
                 </div>
@@ -180,6 +180,10 @@
         const formatButtons = document.querySelectorAll('.format-btn');
 
         // DOM Elements for Sketch Converter
+        const sketchTab = document.getElementById('sketch-tab');
+        const bgRemoverTab = document.getElementById('bg-remover-tab');
+        const sketchSection = document.getElementById('sketch-section');
+        const bgRemoverSection = document.getElementById('bg-remover-section');
         const sketchFileInput = document.getElementById('sketch-dropzone-file');
         const sketchOriginalCanvas = document.getElementById('sketch-original-canvas');
         const sketchResultCanvas = document.getElementById('sketch-result-canvas');
@@ -194,12 +198,6 @@
         const conversionOptions = document.getElementById('conversion-options');
         const conversionButtons = document.querySelectorAll('.conversion-btn');
 
-        // Tab navigation
-        const bgRemoverTab = document.getElementById('bg-remover-tab');
-        const sketchConverterTab = document.getElementById('sketch-converter-tab');
-        const bgRemoverSection = document.getElementById('bg-remover-section');
-        const sketchConverterSection = document.getElementById('sketch-converter-section');
-
         // API Key (replace with your actual API key)
         const API_KEY = 'C6yBigRn4bhfYQ6mYvQuE9JW';
         
@@ -212,20 +210,20 @@
         bgRemoverTab.addEventListener('click', () => {
             bgRemoverTab.classList.remove('bg-gray-200', 'text-gray-700');
             bgRemoverTab.classList.add('bg-blue-500', 'text-white');
-            sketchConverterTab.classList.remove('bg-blue-500', 'text-white');
-            sketchConverterTab.classList.add('bg-gray-200', 'text-gray-700');
+            sketchTab.classList.remove('bg-blue-500', 'text-white');
+            sketchTab.classList.add('bg-gray-200', 'text-gray-700');
             
             bgRemoverSection.classList.remove('hidden');
-            sketchConverterSection.classList.add('hidden');
+            sketchSection.classList.add('hidden');
         });
 
-        sketchConverterTab.addEventListener('click', () => {
-            sketchConverterTab.classList.remove('bg-gray-200', 'text-gray-700');
-            sketchConverterTab.classList.add('bg-blue-500', 'text-white');
+        sketchTab.addEventListener('click', () => {
+            sketchTab.classList.remove('bg-gray-200', 'text-gray-700');
+            sketchTab.classList.add('bg-blue-500', 'text-white');
             bgRemoverTab.classList.remove('bg-blue-500', 'text-white');
             bgRemoverTab.classList.add('bg-gray-200', 'text-gray-700');
             
-            sketchConverterSection.classList.remove('hidden');
+            sketchSection.classList.remove('hidden');
             bgRemoverSection.classList.add('hidden');
         });
 
@@ -256,11 +254,14 @@
             button.addEventListener('click', () => {
                 // Update button styles
                 conversionButtons.forEach(btn => {
-                    btn.classList.remove('bg-blue-100', 'text-blue-800');
-                    btn.classList.add('bg-gray-100', 'text-gray-800');
+                    if (btn.dataset.type === 'sketch') {
+                        btn.classList.remove('bg-gray-200', 'text-gray-700');
+                        btn.classList.add('bg-blue-500', 'text-white');
+                    } else {
+                        btn.classList.remove('bg-blue-500', 'text-white');
+                        btn.classList.add('bg-gray-200', 'text-gray-700');
+                    }
                 });
-                button.classList.remove('bg-gray-100', 'text-gray-800');
-                button.classList.add('bg-blue-100', 'text-blue-800');
                 
                 // Set selected conversion type
                 selectedConversionType = button.dataset.type;
@@ -420,7 +421,7 @@
             }, 100);
         }
 
-        // Apply sketch effect using improved edge detection
+        // Apply sketch effect using edge detection
         function applySketchEffect() {
             const width = sketchOriginalCanvas.width;
             const height = sketchOriginalCanvas.height;
@@ -448,7 +449,7 @@
                 resultData[i + 3] = data[i + 3]; // Alpha channel
             }
             
-            // Apply edge detection using Sobel operator with face preservation
+            // Apply edge detection using Sobel operator
             const sobelData = new Uint8ClampedArray(resultData);
             
             // Sobel kernels
@@ -464,7 +465,7 @@
                 [ 1,  2,  1]
             ];
             
-            // Apply convolution with reduced intensity for better face preservation
+            // Apply convolution
             for (let y = 1; y < height - 1; y++) {
                 for (let x = 1; x < width - 1; x++) {
                     let pixelX = 0;
@@ -481,10 +482,10 @@
                         }
                     }
                     
-                    // Calculate gradient magnitude with reduced intensity
-                    const magnitude = Math.sqrt(pixelX * pixelX + pixelY * pixelY) * 0.5;
+                    // Calculate gradient magnitude
+                    const magnitude = Math.sqrt(pixelX * pixelX + pixelY * pixelY);
                     
-                    // Invert for sketch effect (white lines on black) with face preservation
+                    // Invert for sketch effect (white lines on black)
                     const val = 255 - Math.min(255, magnitude);
                     
                     const idx = (y * width + x) * 4;
@@ -502,7 +503,7 @@
             sketchDownloadBtn.onclick = () => downloadSketchImage('sketch_result.png');
         }
 
-        // Apply grayscale effect with better face preservation
+        // Apply grayscale effect
         function applyGrayscaleEffect() {
             const width = sketchOriginalCanvas.width;
             const height = sketchOriginalCanvas.height;
@@ -515,13 +516,13 @@
             const resultImageData = sketchCtxOriginal.createImageData(width, height);
             const resultData = resultImageData.data;
             
-            // Convert to grayscale with better face preservation
+            // Convert to grayscale
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
                 const b = data[i + 2];
                 
-                // Standard grayscale conversion with slight adjustment for better face detail
+                // Standard grayscale conversion
                 const gray = 0.299 * r + 0.587 * g + 0.114 * b;
                 
                 resultData[i] = gray;
@@ -581,6 +582,10 @@
         function hideSketchError() {
             sketchErrorMessage.classList.add('hidden');
         }
+
+        // Initialize with Sketch Converter as default
+        sketchSection.classList.remove('hidden');
+        bgRemoverSection.classList.add('hidden');
     </script>
 </body>
 </html>
