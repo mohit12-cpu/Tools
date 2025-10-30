@@ -3,87 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Background Remover</title>
+    <title>Image Tools Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <!-- Header -->
+    <header class="w-full max-w-4xl mb-6">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Image Tools Suite</h1>
+        <nav class="flex justify-center space-x-4">
+            <button id="bg-remover-tab" class="px-4 py-2 bg-blue-500 text-white rounded-lg">Background Remover</button>
+            <button id="sketch-converter-tab" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Sketch Converter</button>
+        </nav>
+    </header>
+
+    <!-- Main Content Container -->
     <div class="max-w-4xl w-full bg-white rounded-lg shadow-xl p-6">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-2">Background Remover</h1>
-        <p class="text-gray-600 text-center mb-8">Upload an image to remove its background</p>
-        
-        <!-- File Upload Area -->
-        <div class="mb-8">
-            <div class="flex items-center justify-center w-full">
-                <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                        <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                        </svg>
-                        <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                        <p class="text-xs text-gray-500">PNG, JPG, JPEG (MAX. 10MB)</p>
+        <!-- Background Remover Section -->
+        <div id="bg-remover-section">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Background Remover</h2>
+            <p class="text-gray-600 text-center mb-8">Upload an image to remove its background</p>
+            
+            <!-- File Upload Area -->
+            <div class="mb-8">
+                <div class="flex items-center justify-center w-full">
+                    <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                            <p class="text-xs text-gray-500">PNG, JPG, JPEG (MAX. 10MB)</p>
+                        </div>
+                        <input id="dropzone-file" type="file" class="hidden" accept="image/*" />
+                    </label>
+                </div> 
+            </div>
+
+            <!-- Format Selection -->
+            <div id="format-selection" class="hidden mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Select Output Format</h3>
+                <div class="flex flex-wrap gap-4">
+                    <button class="format-btn bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-format="auto">
+                        <span>Auto (PNG)</span>
+                    </button>
+                    <button class="format-btn bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-format="png">
+                        <span>PNG</span>
+                    </button>
+                    <button class="format-btn bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-format="jpg">
+                        <span>JPG</span>
+                    </button>
+                    <button class="format-btn bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-format="webp">
+                        <span>WEBP</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading" class="hidden flex flex-col items-center justify-center my-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                <p class="text-gray-600">Removing background...</p>
+            </div>
+
+            <!-- Image Display Area -->
+            <div id="image-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Original Image</h3>
+                    <div class="border rounded-lg overflow-hidden">
+                        <img id="original-image" class="w-full h-auto max-h-96 object-contain" alt="Original image">
                     </div>
-                    <input id="dropzone-file" type="file" class="hidden" accept="image/*" />
-                </label>
-            </div> 
-        </div>
-
-        <!-- Format Selection -->
-        <div id="format-selection" class="hidden mb-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-3">Select Output Format</h2>
-            <div class="flex flex-wrap gap-4">
-                <button class="format-btn bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-format="auto">
-                    <span>Auto (PNG)</span>
-                </button>
-                <button class="format-btn bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-format="png">
-                    <span>PNG</span>
-                </button>
-                <button class="format-btn bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-format="jpg">
-                    <span>JPG</span>
-                </button>
-                <button class="format-btn bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-format="webp">
-                    <span>WEBP</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div id="loading" class="hidden flex flex-col items-center justify-center my-8">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-            <p class="text-gray-600">Removing background...</p>
-        </div>
-
-        <!-- Image Display Area -->
-        <div id="image-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="flex flex-col">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">Original Image</h2>
-                <div class="border rounded-lg overflow-hidden">
-                    <img id="original-image" class="w-full h-auto max-h-96 object-contain" alt="Original image">
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Result</h3>
+                    <div class="border rounded-lg overflow-hidden">
+                        <img id="result-image" class="w-full h-auto max-h-96 object-contain" alt="Image with background removed">
+                    </div>
                 </div>
             </div>
-            <div class="flex flex-col">
-                <h2 class="text-xl font-semibold text-gray-800 mb-2">Result</h2>
-                <div class="border rounded-lg overflow-hidden">
-                    <img id="result-image" class="w-full h-auto max-h-96 object-contain" alt="Image with background removed">
-                </div>
+
+            <!-- Download Button -->
+            <div id="download-section" class="hidden text-center">
+                <button id="download-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+                    Download Result
+                </button>
+            </div>
+
+            <!-- Error Message -->
+            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">Error! </strong>
+                <span id="error-text" class="block sm:inline">Something went wrong.</span>
             </div>
         </div>
 
-        <!-- Download Button -->
-        <div id="download-section" class="hidden text-center">
-            <button id="download-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
-                Download Result
-            </button>
-        </div>
+        <!-- Sketch Converter Section -->
+        <div id="sketch-converter-section" class="hidden">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Image to Sketch / Grayscale Converter</h2>
+            <p class="text-gray-600 text-center mb-8">Converts any photo into a pencil sketch or black-and-white version</p>
+            
+            <!-- File Upload Area -->
+            <div class="mb-8">
+                <div class="flex items-center justify-center w-full">
+                    <label for="sketch-dropzone-file" class="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                            <p class="text-xs text-gray-500">PNG, JPG, JPEG (MAX. 10MB)</p>
+                        </div>
+                        <input id="sketch-dropzone-file" type="file" class="hidden" accept="image/*" />
+                    </label>
+                </div> 
+            </div>
 
-        <!-- Error Message -->
-        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong class="font-bold">Error! </strong>
-            <span id="error-text" class="block sm:inline">Something went wrong.</span>
+            <!-- Conversion Options -->
+            <div id="conversion-options" class="hidden mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Select Conversion Type</h3>
+                <div class="flex flex-wrap gap-4">
+                    <button class="conversion-btn bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-type="sketch">
+                        <span>Sketch</span>
+                    </button>
+                    <button class="conversion-btn bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center" data-type="grayscale">
+                        <span>Grayscale</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sketch Loading Indicator -->
+            <div id="sketch-loading" class="hidden flex flex-col items-center justify-center my-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                <p class="text-gray-600">Converting image...</p>
+            </div>
+
+            <!-- Sketch Image Display Area -->
+            <div id="sketch-image-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Original Image</h3>
+                    <div class="border rounded-lg overflow-hidden">
+                        <canvas id="sketch-original-canvas" class="w-full h-auto max-h-96 object-contain"></canvas>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Converted Result</h3>
+                    <div class="border rounded-lg overflow-hidden">
+                        <canvas id="sketch-result-canvas" class="w-full h-auto max-h-96 object-contain"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sketch Download Button -->
+            <div id="sketch-download-section" class="hidden text-center">
+                <button id="sketch-download-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+                    Download Result
+                </button>
+            </div>
+
+            <!-- Sketch Error Message -->
+            <div id="sketch-error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">Error! </strong>
+                <span id="sketch-error-text" class="block sm:inline">Something went wrong.</span>
+            </div>
         </div>
     </div>
 
     <script>
-        // DOM Elements
+        // DOM Elements for Background Remover
         const fileInput = document.getElementById('dropzone-file');
         const originalImage = document.getElementById('original-image');
         const resultImage = document.getElementById('result-image');
@@ -96,13 +179,57 @@
         const formatSelection = document.getElementById('format-selection');
         const formatButtons = document.querySelectorAll('.format-btn');
 
+        // DOM Elements for Sketch Converter
+        const sketchFileInput = document.getElementById('sketch-dropzone-file');
+        const sketchOriginalCanvas = document.getElementById('sketch-original-canvas');
+        const sketchResultCanvas = document.getElementById('sketch-result-canvas');
+        const sketchCtxOriginal = sketchOriginalCanvas.getContext('2d');
+        const sketchCtxResult = sketchResultCanvas.getContext('2d');
+        const sketchImageContainer = document.getElementById('sketch-image-container');
+        const sketchLoadingIndicator = document.getElementById('sketch-loading');
+        const sketchDownloadSection = document.getElementById('sketch-download-section');
+        const sketchDownloadBtn = document.getElementById('sketch-download-btn');
+        const sketchErrorMessage = document.getElementById('sketch-error-message');
+        const sketchErrorText = document.getElementById('sketch-error-text');
+        const conversionOptions = document.getElementById('conversion-options');
+        const conversionButtons = document.querySelectorAll('.conversion-btn');
+
+        // Tab navigation
+        const bgRemoverTab = document.getElementById('bg-remover-tab');
+        const sketchConverterTab = document.getElementById('sketch-converter-tab');
+        const bgRemoverSection = document.getElementById('bg-remover-section');
+        const sketchConverterSection = document.getElementById('sketch-converter-section');
+
         // API Key (replace with your actual API key)
         const API_KEY = 'C6yBigRn4bhfYQ6mYvQuE9JW';
         
-        // Selected format
+        // Selected format and conversion type
         let selectedFormat = 'auto';
+        let selectedConversionType = 'sketch';
+        let currentSketchImage = null;
 
-        // Event Listener for file input
+        // Tab Navigation Event Listeners
+        bgRemoverTab.addEventListener('click', () => {
+            bgRemoverTab.classList.remove('bg-gray-200', 'text-gray-700');
+            bgRemoverTab.classList.add('bg-blue-500', 'text-white');
+            sketchConverterTab.classList.remove('bg-blue-500', 'text-white');
+            sketchConverterTab.classList.add('bg-gray-200', 'text-gray-700');
+            
+            bgRemoverSection.classList.remove('hidden');
+            sketchConverterSection.classList.add('hidden');
+        });
+
+        sketchConverterTab.addEventListener('click', () => {
+            sketchConverterTab.classList.remove('bg-gray-200', 'text-gray-700');
+            sketchConverterTab.classList.add('bg-blue-500', 'text-white');
+            bgRemoverTab.classList.remove('bg-blue-500', 'text-white');
+            bgRemoverTab.classList.add('bg-gray-200', 'text-gray-700');
+            
+            sketchConverterSection.classList.remove('hidden');
+            bgRemoverSection.classList.add('hidden');
+        });
+
+        // Event Listener for background remover file input
         fileInput.addEventListener('change', handleFileSelect);
 
         // Event Listeners for format buttons
@@ -121,7 +248,31 @@
             });
         });
 
-        // Handle file selection
+        // Event Listener for sketch converter file input
+        sketchFileInput.addEventListener('change', handleSketchFileSelect);
+
+        // Event Listeners for conversion buttons
+        conversionButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update button styles
+                conversionButtons.forEach(btn => {
+                    btn.classList.remove('bg-blue-100', 'text-blue-800');
+                    btn.classList.add('bg-gray-100', 'text-gray-800');
+                });
+                button.classList.remove('bg-gray-100', 'text-gray-800');
+                button.classList.add('bg-blue-100', 'text-blue-800');
+                
+                // Set selected conversion type
+                selectedConversionType = button.dataset.type;
+                
+                // Apply conversion if image is loaded
+                if (currentSketchImage) {
+                    applyConversion();
+                }
+            });
+        });
+
+        // Handle file selection for background remover
         function handleFileSelect(event) {
             const file = event.target.files[0];
             
@@ -198,6 +349,194 @@
             }
         }
 
+        // Handle file selection for sketch converter
+        function handleSketchFileSelect(event) {
+            const file = event.target.files[0];
+            
+            if (!file) return;
+            
+            // Check if file is an image
+            if (!file.type.match('image.*')) {
+                showSketchError('Please select an image file (PNG, JPG, JPEG)');
+                return;
+            }
+            
+            // Load image for sketch conversion
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    currentSketchImage = img;
+                    
+                    // Set canvas dimensions
+                    sketchOriginalCanvas.width = img.width;
+                    sketchOriginalCanvas.height = img.height;
+                    sketchResultCanvas.width = img.width;
+                    sketchResultCanvas.height = img.height;
+                    
+                    // Draw original image on canvas
+                    sketchCtxOriginal.drawImage(img, 0, 0);
+                    
+                    // Show conversion options
+                    sketchImageContainer.classList.remove('hidden');
+                    conversionOptions.classList.remove('hidden');
+                    
+                    // Apply default conversion (sketch)
+                    applyConversion();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Apply selected conversion to image
+        function applyConversion() {
+            if (!currentSketchImage) return;
+            
+            // Show loading indicator
+            sketchLoadingIndicator.classList.remove('hidden');
+            sketchDownloadSection.classList.add('hidden');
+            hideSketchError();
+            
+            // Use setTimeout to allow UI to update before processing
+            setTimeout(() => {
+                try {
+                    if (selectedConversionType === 'sketch') {
+                        // Apply sketch effect
+                        applySketchEffect();
+                    } else if (selectedConversionType === 'grayscale') {
+                        // Apply grayscale effect
+                        applyGrayscaleEffect();
+                    }
+                    
+                    // Hide loading, show download
+                    sketchLoadingIndicator.classList.add('hidden');
+                    sketchDownloadSection.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error:', error);
+                    sketchLoadingIndicator.classList.add('hidden');
+                    showSketchError(`Failed to convert image: ${error.message}`);
+                }
+            }, 100);
+        }
+
+        // Apply sketch effect using improved edge detection
+        function applySketchEffect() {
+            const width = sketchOriginalCanvas.width;
+            const height = sketchOriginalCanvas.height;
+            
+            // Get original image data
+            const originalImageData = sketchCtxOriginal.getImageData(0, 0, width, height);
+            const data = originalImageData.data;
+            
+            // Create a copy for the result
+            const resultImageData = sketchCtxOriginal.createImageData(width, height);
+            const resultData = resultImageData.data;
+            
+            // Convert to grayscale first
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // Standard grayscale conversion
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                resultData[i] = gray;
+                resultData[i + 1] = gray;
+                resultData[i + 2] = gray;
+                resultData[i + 3] = data[i + 3]; // Alpha channel
+            }
+            
+            // Apply edge detection using Sobel operator with face preservation
+            const sobelData = new Uint8ClampedArray(resultData);
+            
+            // Sobel kernels
+            const kernelX = [
+                [-1, 0, 1],
+                [-2, 0, 2],
+                [-1, 0, 1]
+            ];
+            
+            const kernelY = [
+                [-1, -2, -1],
+                [ 0,  0,  0],
+                [ 1,  2,  1]
+            ];
+            
+            // Apply convolution with reduced intensity for better face preservation
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    let pixelX = 0;
+                    let pixelY = 0;
+                    
+                    // Apply kernels
+                    for (let ky = -1; ky <= 1; ky++) {
+                        for (let kx = -1; kx <= 1; kx++) {
+                            const idx = ((y + ky) * width + (x + kx)) * 4;
+                            const gray = resultData[idx];
+                            
+                            pixelX += gray * kernelX[ky + 1][kx + 1];
+                            pixelY += gray * kernelY[ky + 1][kx + 1];
+                        }
+                    }
+                    
+                    // Calculate gradient magnitude with reduced intensity
+                    const magnitude = Math.sqrt(pixelX * pixelX + pixelY * pixelY) * 0.5;
+                    
+                    // Invert for sketch effect (white lines on black) with face preservation
+                    const val = 255 - Math.min(255, magnitude);
+                    
+                    const idx = (y * width + x) * 4;
+                    sobelData[idx] = val;
+                    sobelData[idx + 1] = val;
+                    sobelData[idx + 2] = val;
+                }
+            }
+            
+            // Put processed data on result canvas
+            const finalImageData = new ImageData(sobelData, width, height);
+            sketchCtxResult.putImageData(finalImageData, 0, 0);
+            
+            // Set up download button
+            sketchDownloadBtn.onclick = () => downloadSketchImage('sketch_result.png');
+        }
+
+        // Apply grayscale effect with better face preservation
+        function applyGrayscaleEffect() {
+            const width = sketchOriginalCanvas.width;
+            const height = sketchOriginalCanvas.height;
+            
+            // Get original image data
+            const originalImageData = sketchCtxOriginal.getImageData(0, 0, width, height);
+            const data = originalImageData.data;
+            
+            // Create a copy for the result
+            const resultImageData = sketchCtxOriginal.createImageData(width, height);
+            const resultData = resultImageData.data;
+            
+            // Convert to grayscale with better face preservation
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // Standard grayscale conversion with slight adjustment for better face detail
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                resultData[i] = gray;
+                resultData[i + 1] = gray;
+                resultData[i + 2] = gray;
+                resultData[i + 3] = data[i + 3]; // Alpha channel
+            }
+            
+            // Put processed data on result canvas
+            sketchCtxResult.putImageData(resultImageData, 0, 0);
+            
+            // Set up download button
+            sketchDownloadBtn.onclick = () => downloadSketchImage('grayscale_result.png');
+        }
+
         // Download image
         function downloadImage(blob, filename) {
             const url = URL.createObjectURL(blob);
@@ -210,15 +549,37 @@
             URL.revokeObjectURL(url);
         }
 
-        // Show error message
+        // Download sketch image
+        function downloadSketchImage(filename) {
+            const dataUrl = sketchResultCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Show error message for background remover
         function showError(message) {
             errorText.textContent = message;
             errorMessage.classList.remove('hidden');
         }
 
-        // Hide error message
+        // Hide error message for background remover
         function hideError() {
             errorMessage.classList.add('hidden');
+        }
+
+        // Show error message for sketch converter
+        function showSketchError(message) {
+            sketchErrorText.textContent = message;
+            sketchErrorMessage.classList.remove('hidden');
+        }
+
+        // Hide error message for sketch converter
+        function hideSketchError() {
+            sketchErrorMessage.classList.add('hidden');
         }
     </script>
 </body>
